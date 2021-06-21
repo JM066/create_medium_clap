@@ -1,5 +1,5 @@
+import React, { useState, useLayoutEffect, useCallback } from "react";
 import mojs from "mo-js";
-import React, { Component, useEffect, useState, useCallback } from "react";
 
 const initialState = {
   count: 0,
@@ -7,15 +7,19 @@ const initialState = {
   isClicked: false,
 };
 
-// Custom Hook for animation
+/**
+ * Custom Hook for animation
+ */
 const useClapAnimation = ({ clapEl, countEl, clapTotalEl }) => {
   const [animationTimeline, setAnimationTimeline] = useState(
     () => new mojs.Timeline()
   );
-  useEffect(() => {
+
+  useLayoutEffect(() => {
     if (!clapEl || !countEl || !clapTotalEl) {
       return;
     }
+
     const tlDuration = 300;
     const scaleButton = new mojs.Html({
       el: clapEl,
@@ -23,16 +27,51 @@ const useClapAnimation = ({ clapEl, countEl, clapTotalEl }) => {
       scale: { 1.3: 1 },
       easing: mojs.easing.ease.out,
     });
+
+    const triangleBurst = new mojs.Burst({
+      parent: clapEl,
+      radius: { 50: 95 },
+      count: 5,
+      angle: 30,
+      children: {
+        shape: "polygon",
+        radius: { 6: 0 },
+        stroke: "rgba(211,54,0,0.5)",
+        strokeWidth: 2,
+        angle: 210,
+        delay: 30,
+        speed: 0.2,
+        easing: mojs.easing.bezier(0.1, 1, 0.3, 1),
+        duration: tlDuration,
+      },
+    });
+
+    const circleBurst = new mojs.Burst({
+      parent: clapEl,
+      radius: { 50: 75 },
+      angle: 25,
+      duration: tlDuration,
+      children: {
+        shape: "circle",
+        fill: "rgba(149,165,166,0.5)",
+        delay: 30,
+        speed: 0.2,
+        radius: { 3: 0 },
+        easing: mojs.easing.bezier(0.1, 1, 0.3, 1),
+      },
+    });
+
     const countAnimation = new mojs.Html({
       el: countEl,
       opacity: { 0: 1 },
-      duration: tlDuration,
       y: { 0: -30 },
+      duration: tlDuration,
     }).then({
       opacity: { 1: 0 },
-      delay: tlDuration / 2,
       y: -80,
+      delay: tlDuration / 2,
     });
+
     const countTotalAnimation = new mojs.Html({
       el: clapTotalEl,
       opacity: { 0: 1 },
@@ -40,37 +79,7 @@ const useClapAnimation = ({ clapEl, countEl, clapTotalEl }) => {
       duration: tlDuration,
       y: { 0: -3 },
     });
-    const triangleBurst = new mojs.Burst({
-      parent: clapEl,
-      radius: { 50: 95 }, //size of the triangle
-      count: 5,
-      angle: 30,
-      children: {
-        shape: "polygon",
-        radius: { 6: 0 },
-        stroke: "rgba(211, 54, 0, 0.5",
-        strokeWidth: 2,
-        angle: 210,
-        speed: 0.2,
-        delay: 30,
-        duration: tlDuration,
-        easing: mojs.easing.bezier(0.1, 1, 0.3, 1),
-      },
-    });
-    const circleBurst = new mojs.Burst({
-      parent: clapEl,
-      radius: { 50: 75 }, //size of the circle
-      angle: 25,
-      duration: tlDuration,
-      children: {
-        shape: "circle",
-        fill: "rgba(149, 165, 166, 0.5)",
-        delay: 30,
-        speed: 0.2,
-        radius: { 3: 0 },
-        easing: mojs.easing.bezier(0.1, 1, 0.3, 1),
-      },
-    });
+
     if (typeof clapEl === "string") {
       const clap = document.getElementById("clap");
       clap.style.transform = "scale(1,1)";
@@ -87,13 +96,15 @@ const useClapAnimation = ({ clapEl, countEl, clapTotalEl }) => {
     ]);
     setAnimationTimeline(newAnimationTimeline);
   }, [clapEl, countEl, clapTotalEl]);
+
   return animationTimeline;
 };
 
 const MediumClap = () => {
-  const maximumUserClap = 12;
+  const MAXIMUM_USER_CLAP = 50;
   const [clapState, setClapState] = useState(initialState);
   const { count, countTotal, isClicked } = clapState;
+
   const [{ clapRef, clapCountRef, clapTotalRef }, setRefState] = useState({});
 
   const setRef = useCallback((node) => {
@@ -102,25 +113,30 @@ const MediumClap = () => {
       [node.dataset.refkey]: node,
     }));
   }, []);
+
   const animationTimeline = useClapAnimation({
     clapEl: clapRef,
     countEl: clapCountRef,
     clapTotalEl: clapTotalRef,
   });
+
   const handleClapClick = () => {
     animationTimeline.replay();
-    setClapState((prev) => ({
+    setClapState((prevState) => ({
       isClicked: true,
-      count: Math.min(prev.count + 1, maximumUserClap),
+      count: Math.min(count + 1, MAXIMUM_USER_CLAP),
       countTotal:
-        count < maximumUserClap ? prev.countTotal + 1 : prev.countTotal,
+        count < MAXIMUM_USER_CLAP
+          ? prevState.countTotal + 1
+          : prevState.countTotal,
     }));
   };
+
   return (
     <button
-      className="clap"
       ref={setRef}
-      dataset-refkey="clapRef"
+      data-refkey="clapRef"
+      className="clap"
       onClick={handleClapClick}
     >
       <ClapIcon isClicked={isClicked} />
@@ -129,6 +145,11 @@ const MediumClap = () => {
     </button>
   );
 };
+
+/**
+ * subcomponents
+ */
+
 const ClapIcon = ({ isClicked }) => {
   return (
     <span>
@@ -145,22 +166,26 @@ const ClapIcon = ({ isClicked }) => {
 };
 const ClapCount = ({ count, setRef }) => {
   return (
-    <span ref={setRef} dataset-refkey="clapCountRef" className="count">
-      +{count}
+    <span ref={setRef} data-refkey="clapCountRef" className="count">
+      + {count}
     </span>
   );
 };
+
 const CountTotal = ({ countTotal, setRef }) => {
   return (
-    <span ref={setRef} dataset-refkey="clapTotalRef" className="total">
+    <span ref={setRef} data-refkey="clapTotalRef" className="total">
       {countTotal}
     </span>
   );
 };
-//Usage
-// const Another = () => {
-//   const AnimatedMediumClap = withClapAnimation(MediumClap);
-//   return <AnimatedMediumClap />;
-// };
 
-export default MediumClap;
+/**
+ * Usage
+ */
+
+const Usage = () => {
+  return <MediumClap />;
+};
+
+export default Usage;
