@@ -10,6 +10,7 @@ body {
   height: 80px;
   background: none;
   user-select: none;
+  margin: 0 30px;
 }
 .clap:after {
   content: "";

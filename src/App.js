@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import Usage from "./pages/higerOrderComponent";
 import MediumClap from "./pages/customHook";
+import ContextExample from "./pages/context";
 import "./App.css";
 class App extends Component {
   render() {
@@ -8,6 +9,7 @@ class App extends Component {
       <div style={{ display: "flex", justifyContent: "space-between" }}>
         <Usage />
         <MediumClap />
+        <ContextExample />
       </div>
     );
   }
